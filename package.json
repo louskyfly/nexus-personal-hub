@@ -1,0 +1,25 @@
+{
+  "name": "nexus-personal-hub",
+  "private": true,
+  "version": "1.0.0",
+  "description": "NEXUS — espace numérique personnel : dashboard, outils, notes et mini-arcade, hors ligne et installable.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "icons": "node scripts/make-icons.mjs"
+  },
+  "dependencies": {
+    "lucide-react": "^1.70.0",
+    "qrcode": "^1.5.4",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.2.1",
+    "sharp": "^0.35.5",
+    "vite": "^8.3.6",
+    "vite-plugin-pwa": "^2.0.0"
+  }
+}
