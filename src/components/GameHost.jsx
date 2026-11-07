@@ -47,9 +47,11 @@ export function GameHost({ gameId, open, onClose }) {
       const win = payload.outcome === 'win'
       const loss = payload.outcome === 'loss'
       toast({
-        title: win ? 'Victoire !' : loss ? 'Partie terminée' : 'Session enregistrée',
+        title: game.id === 'blackbox'
+          ? payload.detail?.mission === 5 ? 'Campagne terminée' : 'Mission terminée'
+          : win ? 'Victoire !' : loss ? 'Partie terminée' : 'Session enregistrée',
         description: `${game.title} · +${xp} XP`,
-        tone: win ? 'achievement' : 'info',
+        tone: game.id === 'blackbox' || win ? 'achievement' : 'info',
         duration: 4200,
       })
     },

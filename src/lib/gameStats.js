@@ -1,6 +1,6 @@
 /* Arcade progression rules kept out of the UI layer. */
 
-export const GAME_IDS = ['snake', '2048', 'minesweeper', 'pong', 'tictactoe', 'memory', 'reaction']
+export const GAME_IDS = ['snake', '2048', 'minesweeper', 'pong', 'tictactoe', 'memory', 'reaction', 'blackbox']
 
 export const LEVEL_STEP = 300
 
@@ -39,6 +39,8 @@ export function computeGameXp(game, result = {}) {
       return detail.completed ? 50 : 10
     case 'reaction':
       return Math.max(5, Math.min(60, Math.round(65 - (detail.ms ?? 600) / 10)))
+    case 'blackbox':
+      return [40, 55, 75, 100, 140][Math.min(4, Math.max(0, (detail.mission ?? 1) - 1))] ?? 40
     default:
       return 10
   }
@@ -140,6 +142,22 @@ export const ACHIEVEMENTS = [
     icon: 'Zap',
     xp: 60,
     check: (data) => data.stats.bests.reaction != null && data.stats.bests.reaction < 250,
+  },
+  {
+    id: 'blackbox_first',
+    title: 'Accès accordé',
+    description: 'Terminer la première mission de BLACK BOX.',
+    icon: 'Terminal',
+    xp: 30,
+    check: (data) => (data.stats.bests.blackbox ?? 0) >= 1,
+  },
+  {
+    id: 'blackbox_complete',
+    title: 'La chambre noire',
+    description: 'Terminer les cinq missions de BLACK BOX.',
+    icon: 'DoorOpen',
+    xp: 150,
+    check: (data) => (data.stats.bests.blackbox ?? 0) >= 5,
   },
   {
     id: 'marathon',

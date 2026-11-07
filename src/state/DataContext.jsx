@@ -20,6 +20,7 @@ export const DEFAULT_DATA = {
   bookmarks: [],
   docs: [],
   countdowns: [],
+  terminal: { completed: [], current: 1 },
   scratch: { content: '', updatedAt: null },
   weather: null,
   stats: {
@@ -37,6 +38,7 @@ export const DEFAULT_DATA = {
       tictactoe: { wins: 0, draws: 0, losses: 0 },
       memory: null,
       reaction: null,
+      blackbox: 0,
     },
     achievements: {},
   },
@@ -54,6 +56,15 @@ function sanitize(raw) {
     bookmarks: Array.isArray(raw.bookmarks) ? raw.bookmarks : [],
     docs: Array.isArray(raw.docs) ? raw.docs : [],
     countdowns: Array.isArray(raw.countdowns) ? raw.countdowns : [],
+    terminal: {
+      completed: Array.isArray(raw.terminal?.completed)
+        ? [...new Set(raw.terminal.completed.filter((value) => Number.isInteger(value) && value >= 1))]
+        : [],
+      current:
+        Number.isInteger(raw.terminal?.current) && raw.terminal.current >= 1
+          ? raw.terminal.current
+          : 1,
+    },
     scratch: {
       content: typeof raw.scratch?.content === 'string' ? raw.scratch.content : '',
       updatedAt: raw.scratch?.updatedAt ?? null,
@@ -330,6 +341,17 @@ export function DataProvider({ children }) {
     commit((prev) => ({ ...prev, weather }))
   }, [commit])
 
+  const setTerminalProgress = useCallback((patch) => {
+    commit((prev) => ({
+      ...prev,
+      terminal: {
+        completed: Array.isArray(prev.terminal?.completed) ? prev.terminal.completed : [],
+        current: prev.terminal?.current ?? 1,
+        ...patch,
+      },
+    }))
+  }, [commit])
+
   /* ---------------- Arcade stats ---------------- */
 
   const recordGame = useCallback((game, payload = {}) => {
@@ -378,6 +400,8 @@ export function DataProvider({ children }) {
         if (typeof detail.ms === 'number') {
           bests.reaction = bests.reaction == null ? detail.ms : Math.min(bests.reaction, detail.ms)
         }
+      } else if (game === 'blackbox') {
+        bests.blackbox = Math.max(bests.blackbox ?? 0, detail.missionsCompleted ?? 0)
       }
 
       const entry = {
@@ -465,6 +489,7 @@ export function DataProvider({ children }) {
       addCountdown,
       deleteCountdown,
       setWeather,
+      setTerminalProgress,
       recordGame,
       unlockAchievements,
       importContent,
@@ -495,6 +520,7 @@ export function DataProvider({ children }) {
       addCountdown,
       deleteCountdown,
       setWeather,
+      setTerminalProgress,
       recordGame,
       unlockAchievements,
       importContent,

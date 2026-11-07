@@ -22,6 +22,8 @@ import {
   TrendingUp,
   Sparkles,
   History,
+  Terminal,
+  DoorOpen,
 } from 'lucide-react'
 import { GAMES } from '../lib/catalog'
 import { ACHIEVEMENTS, levelInfo } from '../lib/gameStats'
@@ -36,6 +38,7 @@ import { playSound } from '../lib/sound'
 const ACHIEVEMENT_ICONS = {
   Gamepad2, Spline, Worm, LayoutGrid, Trophy, Flag, Bomb, Table2, Medal, Hash,
   Layers, Zap, Flame, Star, Compass, NotebookPen, CircleCheck, TrendingUp,
+  Terminal, DoorOpen,
 }
 
 function bestLabel(gameId, stats) {
@@ -57,6 +60,8 @@ function bestLabel(gameId, stats) {
       return bests.memory ? `${bests.memory.attempts} essais` : '—'
     case 'reaction':
       return bests.reaction != null ? `${bests.reaction} ms` : '—'
+    case 'blackbox':
+      return bests.blackbox ? `${bests.blackbox} / 5 missions` : '—'
     default:
       return '—'
   }
@@ -83,8 +88,8 @@ export default function ArcadePage() {
     <div className="page arcade-page">
       <PageHeader
         eyebrow="Mini Arcade"
-        title="Sept jeux, une seule salle."
-        description="Des classiques revisités, des records personnels et une progression qui vous suit. Tout fonctionne hors ligne."
+        title="Sept jeux et un terminal."
+        description="Des classiques revisités, un récit à décrypter, des records personnels et une progression qui vous suit. Tout fonctionne hors ligne."
         actions={
           <div className="arcade-rank glass">
             <div className="rank-ring" style={{ '--progress': `${Math.round(info.progress * 100)}%` }}>
@@ -263,6 +268,10 @@ export default function ArcadePage() {
             <li>
               <span><Zap size={14} /> Réflexes</span>
               <strong>{bests.reaction != null ? `${bests.reaction} ms` : 'Aucun score'}</strong>
+            </li>
+            <li>
+              <span><Terminal size={14} /> Black Box</span>
+              <strong>{bests.blackbox ? `${bests.blackbox} / 5 missions` : 'Aucune mission'}</strong>
             </li>
           </ul>
         </section>

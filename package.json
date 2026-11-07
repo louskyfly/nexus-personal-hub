@@ -1,7 +1,7 @@
 {
   "name": "nexus-personal-hub",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "NEXUS — espace numérique personnel : dashboard, outils, notes et mini-arcade, hors ligne et installable.",
   "type": "module",
   "scripts": {

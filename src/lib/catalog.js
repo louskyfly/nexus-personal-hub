@@ -6,6 +6,7 @@ import {
   Hash,
   Layers,
   Zap,
+  Terminal,
   KeyRound,
   QrCode,
   Disc3,
@@ -93,6 +94,17 @@ export const GAMES = [
     tags: ['Réflexes', 'Records'],
     controls: 'Clic ou barre d’espace',
     load: () => import('../games/ReactionGame.jsx'),
+  },
+  {
+    id: 'blackbox',
+    title: 'Black Box',
+    tagline: 'Terminal narratif',
+    description: 'Un terminal oublié, cinq missions et une intelligence qui vous observe. Explorez les fichiers, décryptez les messages et ouvrez la chambre noire.',
+    icon: Terminal,
+    hue: '#5eead4',
+    tags: ['Solo', 'Énigmes', 'Narration'],
+    controls: 'Commandes : help · ls · cat · scan · decrypt · unlock',
+    load: () => import('../games/BlackBoxGame.jsx'),
   },
 ]
 

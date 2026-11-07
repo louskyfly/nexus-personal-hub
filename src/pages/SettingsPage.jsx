@@ -26,7 +26,7 @@ import { ACCENTS, THEMES } from '../lib/themes'
 import { downloadText, humanBytes, storageBytes } from '../lib/utils'
 import { playSound } from '../lib/sound'
 
-const APP_VERSION = '1.0.0'
+const APP_VERSION = '1.1.0'
 
 const SHORTCUTS = [
   ['⌘ / Ctrl + K', 'Ouvrir la recherche globale'],

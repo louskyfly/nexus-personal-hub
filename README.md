@@ -44,10 +44,16 @@ du nom du dépôt lorsque le build tourne dans GitHub Actions.
 - Chaque widget peut être agrandi, déplacé, redimensionné ou masqué. La disposition est conservée.
 
 ### Arcade
-- **Snake**, **2048**, **Démineur**, **Pong**, **Morpion**, **Memory** et **Réflexes**.
-- Records personnels, favoris, historique des parties, statistiques globales, XP, niveaux et 18 succès.
+- **Snake**, **2048**, **Démineur**, **Pong**, **Morpion**, **Memory**, **Réflexes**
+  et **Black Box**, le terminal narratif solo.
+- **Black Box** : cinq missions, exploration de fichiers, réseau fictif, Base64,
+  chiffrement de César, fichiers cachés et campagne sauvegardée.
+- Records personnels, favoris, historique des parties, statistiques globales, XP,
+  niveaux et 20 succès.
 - Difficulté réglable pour Pong et Démineur, niveaux pour Memory, IA experte ou amicale au Morpion.
 - Commandes clavier, souris et tactiles (dont le D-pad mobile pour Snake).
+
+![Black Box — terminal narratif](docs/preview-blackbox.png)
 
 ### Outils
 - Générateur de mots de passe fictifs (jamais enregistrés).
@@ -102,7 +108,7 @@ prévisions) et affiche un état hors ligne ou des données en cache le cas éch
 ```
 src/
   components/   layout, modales, widgets partagés, palette de recherche
-  games/        jeux dans src/games
+  games/        jeux et campagne Black Box dans src/games
   lib/          logique pure : stockage, calculs, unités, couleurs, sons, météo
   pages/        Accueil, Dashboard, Arcade, Outils, Notes, Paramètres
   state/        contextes React (données, préférences, navigation)
