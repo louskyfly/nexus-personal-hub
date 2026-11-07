@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   ChevronLeft,
   ChevronRight,
@@ -42,6 +42,18 @@ export function WidgetBoard({ page, allowedIds, editing, onCustomize, onFinishEd
     setFocusOpen(true)
     playSound('open')
   }
+
+  useEffect(() => {
+    const handler = (event) => {
+      const id = event.detail?.id
+      if (!id || !allowedIds.includes(id) || !WIDGETS[id]) return
+      setFocusId(id)
+      setFocusOpen(true)
+      playSound('open')
+    }
+    window.addEventListener('nexus:open-widget', handler)
+    return () => window.removeEventListener('nexus:open-widget', handler)
+  }, [allowedIds])
 
   const hideWidget = (id) => {
     toggleWidget(page, id)

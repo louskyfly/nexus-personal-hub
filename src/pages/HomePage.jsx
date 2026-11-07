@@ -7,6 +7,7 @@ import {
   NotebookPen,
   Search,
   SlidersHorizontal,
+  Sparkles,
   StickyNote,
   TrendingUp,
 } from 'lucide-react'
@@ -20,7 +21,7 @@ import { WidgetBoard } from '../components/WidgetBoard'
 import { HOME_WIDGET_IDS } from '../widgets/registry'
 import { playSound } from '../lib/sound'
 
-export default function HomePage({ onCustomize }) {
+export default function HomePage({ onCustomize, onOpenAssistant }) {
   const { prefs } = usePrefs()
   const { data } = useData()
   const { navigate, openSearch } = useNavigation()
@@ -74,6 +75,17 @@ export default function HomePage({ onCustomize }) {
             <button type="button" className="btn btn-ghost" onClick={openSearch}>
               <Search size={15} /> Rechercher
               <kbd>{typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl K'}</kbd>
+            </button>
+            <button
+              type="button"
+              className="btn btn-ai"
+              onClick={() => {
+                playSound('open')
+                onOpenAssistant?.()
+              }}
+              title="NEXUS Mind — Ctrl+J"
+            >
+              <Sparkles size={15} /> NEXUS Mind
             </button>
           </div>
         </div>

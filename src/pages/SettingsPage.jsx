@@ -24,12 +24,14 @@ import { useOnline } from '../lib/hooks'
 import { ConfirmDialog, PageHeader, Switch } from '../components/ui'
 import { ACCENTS, THEMES } from '../lib/themes'
 import { downloadText, humanBytes, storageBytes } from '../lib/utils'
+import { speakAssistant, speechAvailable, stopSpeech } from '../lib/speech'
 import { playSound } from '../lib/sound'
 
-const APP_VERSION = '1.1.0'
+const APP_VERSION = '1.2.0'
 
 const SHORTCUTS = [
   ['⌘ / Ctrl + K', 'Ouvrir la recherche globale'],
+  ['⌘ / Ctrl + J', 'Ouvrir NEXUS Mind'],
   ['⌘ / Ctrl + B', 'Replier ou déployer la barre latérale'],
   ['Alt + 1 … 6', 'Naviguer entre les sections'],
   ['Échap', 'Fermer la fenêtre ou le panneau actif'],
@@ -250,6 +252,44 @@ export default function SettingsPage({ onCustomize, installPrompt, onInstall, st
 
           <div className="settings-divider" />
 
+          <Switch
+            checked={prefs.aiVoice}
+            onChange={(value) => {
+              setPref('aiVoice', value)
+              if (!value) stopSpeech()
+              else if (prefs.sound) speakAssistant('Me voici. Le texte s’écrit toujours, même quand ma voix est coupée.')
+            }}
+            label="Voix de NEXUS Mind"
+            description="Lecture vocale des réponses. Le texte continue de s’écrire en mode silencieux."
+          />
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={() => {
+              if (!prefs.sound) {
+                toast({
+                  title: 'Les sons sont coupés',
+                  description: 'Activez les sons pour entendre NEXUS Mind.',
+                  tone: 'warning',
+                })
+                return
+              }
+              playSound('open')
+              speakAssistant(
+                'Bonjour. Je suis NEXUS Mind. Je peux chercher dans vos notes, ouvrir une page ou lancer un jeu.',
+                { enabled: true },
+              )
+            }}
+            disabled={!speechAvailable()}
+          >
+            <Sparkles size={14} /> Tester NEXUS Mind
+          </button>
+          {!speechAvailable() ? (
+            <p className="hint">La synthèse vocale n’est pas disponible dans ce navigateur.</p>
+          ) : null}
+
+          <div className="settings-divider" />
+
           <div className="settings-head compact">
             <span className="settings-icon"><Keyboard size={18} /></span>
             <div>
@@ -399,6 +439,7 @@ export default function SettingsPage({ onCustomize, installPrompt, onInstall, st
             <li><Wifi size={14} /><span>Fonctionne hors ligne après le premier chargement. Seule la météo nécessite Internet.</span></li>
             <li><ShieldCheck size={14} /><span>Aucune donnée n’est envoyée à un serveur NEXUS. Tout reste sur cet appareil.</span></li>
             <li><Database size={14} /><span>Contenu structuré : IndexedDB · préférences : localStorage.</span></li>
+            <li><Sparkles size={14} /><span>NEXUS Mind fonctionne localement, sans clé API et sans envoyer vos notes.</span></li>
           </ul>
           <div className="about-footer">
             <span>NEXUS — Personal Hub · version {APP_VERSION}</span>

@@ -9,6 +9,7 @@ import { CommandPalette } from './components/CommandPalette'
 import { CustomizePanel } from './components/CustomizePanel'
 import { GameHost } from './components/GameHost'
 import { ToolHost } from './components/ToolHost'
+import { NexusAssistant } from './components/NexusAssistant'
 import { ErrorBoundary } from './components/ui'
 import HomePage from './pages/HomePage'
 import DashboardPage from './pages/DashboardPage'
@@ -48,6 +49,7 @@ function Shell() {
   const [customize, setCustomize] = useState({ open: false, page: 'home' })
   const [game, setGame] = useState(null)
   const [tool, setTool] = useState(null)
+  const [assistantOpen, setAssistantOpen] = useState(false)
   const [installPrompt, setInstallPrompt] = useState(null)
   const [standalone, setStandalone] = useState(() =>
     typeof window !== 'undefined' &&
@@ -155,6 +157,11 @@ function Shell() {
         setPref('sidebarCollapsed', !prefs.sidebarCollapsed)
         return
       }
+      if (modifier && event.key.toLowerCase() === 'j') {
+        event.preventDefault()
+        setAssistantOpen((value) => !value)
+        return
+      }
       if (event.altKey && /^[1-6]$/.test(event.key)) {
         if (typing) return
         event.preventDefault()
@@ -166,7 +173,6 @@ function Shell() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [prefs.shortcuts, prefs.sidebarCollapsed, mobileOpen, navigate, setPref])
-
   const openGame = useCallback(
     (id) => {
       if (!id) return
@@ -192,6 +198,13 @@ function Shell() {
     setCustomize({ open: true, page: page === 'dashboard' ? 'dashboard' : 'home' })
   }, [])
 
+  const closeOverlays = useCallback(() => {
+    setSearchOpen(false)
+    setCustomize((value) => ({ ...value, open: false }))
+    setGame((value) => (value ? { ...value, open: false } : value))
+    setTool((value) => (value ? { ...value, open: false } : value))
+  }, [])
+
   const install = useCallback(async () => {
     if (!installPrompt) return
     try {
@@ -207,8 +220,8 @@ function Shell() {
   }, [installPrompt, toast])
 
   const navigationValue = useMemo(
-    () => ({ route, navigate, openGame, openTool, openCustomize, openSearch: () => setSearchOpen(true) }),
-    [route, navigate, openGame, openTool, openCustomize],
+    () => ({ route, navigate, openGame, openTool, openCustomize, openSearch: () => setSearchOpen(true), closeOverlays }),
+    [route, navigate, openGame, openTool, openCustomize, closeOverlays],
   )
 
   const pageNode = (() => {
@@ -232,7 +245,7 @@ function Shell() {
         )
       case 'home':
       default:
-        return <HomePage onCustomize={() => openCustomize('home')} />
+        return <HomePage onCustomize={() => openCustomize('home')} onOpenAssistant={() => setAssistantOpen(true)} />
     }
   })()
 
@@ -306,6 +319,8 @@ function Shell() {
           onClose={() => setTool((value) => (value ? { ...value, open: false } : value))}
         />
       ) : null}
+
+      <NexusAssistant open={assistantOpen} onOpenChange={setAssistantOpen} />
     </NavigationProvider>
   )
 }

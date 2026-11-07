@@ -1,8 +1,9 @@
 # NEXUS — Personal Hub
 
 Un espace numérique personnel inspiré de l’écosystème Apple et du langage visuel « Liquid Glass ».
-NEXUS réunit un tableau de bord, une salle d’arcade, des outils du quotidien et un espace de notes
-dans une seule application locale, rapide et installable.
+NEXUS réunit un tableau de bord, une salle d’arcade, des outils du quotidien, un espace de notes
+et **NEXUS Mind**, un assistant local capable d’agir sur toute l’application, dans un seul
+environnement rapide et installable.
 
 **En ligne : [https://louskyfly.github.io/nexus-personal-hub/](https://louskyfly.github.io/nexus-personal-hub/)**
 · **Dépôt : [github.com/louskyfly/nexus-personal-hub](https://github.com/louskyfly/nexus-personal-hub)**
@@ -34,6 +35,18 @@ l’application et la publie sur GitHub Pages. Le `base` Vite est calculé autom
 du nom du dépôt lorsque le build tourne dans GitHub Actions.
 
 ## Fonctionnalités
+
+### NEXUS Mind — l’assistant intégré
+- Accessible depuis l’accueil, l’orbe flottante ou `Ctrl/⌘ + J`.
+- Cherche un mot ou une phrase dans toutes les notes, y compris les anciennes, et ouvre le résultat.
+- Ouvre n’importe quelle page, un jeu, un outil ou un widget du dashboard.
+- Crée des notes, des tâches et des liens ; change le thème, l’accent, les sons, le mode discret et la disposition.
+- Répond aux questions sur votre niveau, vos notes, vos tâches et vos records.
+- Pop-up « liquide » vert en haut à droite, texte toujours animé, voix française optionnelle et mode silencieux.
+- Visite guidée page par page avec portail de transition animé.
+- Fonctionne **localement**, sans clé API et sans envoyer vos notes à un serveur.
+
+![NEXUS Mind](docs/preview-assistant.png)
 
 ### Accueil et Pocket Dashboard
 - Accueil personnalisable : météo réelle, calendrier, tâches, notes rapides, applications récentes,
@@ -83,6 +96,7 @@ du nom du dépôt lorsque le build tourne dans GitHub Actions.
 | Raccourci | Action |
 | --- | --- |
 | `Ctrl/⌘ + K` | Recherche globale |
+| `Ctrl/⌘ + J` | Ouvrir NEXUS Mind |
 | `Ctrl/⌘ + B` | Replier/déployer la barre latérale |
 | `Alt + 1…6` | Naviguer entre les sections |
 | `Échap` | Fermer la fenêtre active |

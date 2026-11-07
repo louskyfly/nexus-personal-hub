@@ -11,6 +11,7 @@ export const DEFAULT_PREFS = {
   discreteMode: false,
   sound: true,
   soundVolume: 0.45,
+  aiVoice: true,
   shortcuts: true,
   sidebarCollapsed: false,
   weekStart: 1,
