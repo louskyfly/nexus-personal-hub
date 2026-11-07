@@ -42,11 +42,24 @@ du nom du dépôt lorsque le build tourne dans GitHub Actions.
 - Ouvre n’importe quelle page, un jeu, un outil ou un widget du dashboard.
 - Crée des notes, des tâches et des liens ; change le thème, l’accent, les sons, le mode discret et la disposition.
 - Répond aux questions sur votre niveau, vos notes, vos tâches et vos records.
+- Répond aux questions générales grâce à une couche IA optionnelle compatible OpenAI : OpenRouter,
+  OpenAI, Groq, Google Gemini, Ollama en local ou endpoint personnalisé.
 - Pop-up « liquide » vert en haut à droite, texte toujours animé, voix française optionnelle et mode silencieux.
 - Visite guidée page par page avec portail de transition animé.
-- Fonctionne **localement**, sans clé API et sans envoyer vos notes à un serveur.
+- Les actions restent **locales**. Sans fournisseur IA, NEXUS Mind continue de fonctionner hors ligne,
+  sans clé API et sans envoyer vos notes.
 
 ![NEXUS Mind](docs/preview-assistant.png)
+
+#### Activer une vraie IA conversationnelle
+1. Ouvrir **Paramètres → Intelligence conversationnelle**.
+2. Choisir un fournisseur, puis renseigner le modèle et la clé API si nécessaire.
+3. Cliquer sur **Tester la connexion**.
+
+La clé est stockée uniquement dans le navigateur (`localStorage`, clé `nexus.ai.cloud.v1`), séparément
+des préférences. Elle n’est jamais incluse dans l’export NEXUS. Seuls la date, la page, les compteurs et
+les titres récents sont transmis au modèle ; le contenu complet des notes reste local. Si le fournisseur
+bloque les requêtes navigateur (CORS), utilisez OpenRouter, Groq, Gemini ou un petit proxy compatible.
 
 ### Accueil et Pocket Dashboard
 - Accueil personnalisable : météo réelle, calendrier, tâches, notes rapides, applications récentes,
@@ -87,9 +100,10 @@ du nom du dépôt lorsque le build tourne dans GitHub Actions.
 ### Paramètres et données
 - Thèmes Midnight, Graphite et Frost, six couleurs d’accent.
 - Animations, mode discret, sons synthétisés et raccourcis activables.
+- Configuration d’une IA conversationnelle optionnelle, avec test de connexion.
 - Export/import complet en JSON.
 - Stockage du contenu dans IndexedDB et des préférences dans localStorage.
-- Installation PWA et fonctionnement hors ligne (hors météo).
+- Installation PWA et fonctionnement hors ligne (hors météo et IA distante).
 
 ## Raccourcis
 
@@ -114,8 +128,10 @@ du nom du dépôt lorsque le build tourne dans GitHub Actions.
 ## Données et confidentialité
 
 Aucun serveur NEXUS n’est utilisé. Les notes, tâches, documents, statistiques et préférences restent
-sur l’appareil. La météo est la seule fonction réseau : elle interroge Open-Meteo (géocodage et
-prévisions) et affiche un état hors ligne ou des données en cache le cas échéant.
+sur l’appareil. La météo interroge Open-Meteo (géocodage et prévisions). Si vous activez une IA
+conversationnelle, les questions générales et un contexte minimal (date, page, compteurs, titres
+récents) sont envoyés directement au fournisseur choisi ; la clé API reste dans le navigateur et
+n’est jamais incluse dans l’export.
 
 ## Structure
 

@@ -407,6 +407,7 @@ function createResult(reply, extra = {}) {
     suggestions: extra.suggestions ?? defaultSuggestions(),
     closeAssistant: extra.closeAssistant ?? false,
     multi: extra.multi ?? false,
+    kind: extra.kind ?? 'local',
   }
 }
 
@@ -421,7 +422,7 @@ export function defaultSuggestions() {
 }
 
 function capabilitiesReply(prefs) {
-  return `Je suis NEXUS Mind, votre assistant local${prefs?.name ? ` de ${prefs.name}` : ''}. Je peux chercher un mot dans vos notes, ouvrir une page, un jeu, un outil ou un widget, créer une note ou une tâche, et changer vos préférences. Je fonctionne sans envoyer vos données à un serveur.`
+  return `Je suis NEXUS Mind, votre assistant${prefs?.name ? ` de ${prefs.name}` : ''}. Je peux chercher un mot dans vos notes, ouvrir une page, un jeu, un outil ou un widget, créer une note ou une tâche, et changer vos préférences. Je peux aussi répondre aux questions générales si une IA conversationnelle est connectée dans les paramètres.`
 }
 
 function statsReply(data) {
@@ -436,6 +437,23 @@ function isOpenVerb(normalized) {
   return /\b(ouvre|ouvrir|lance|lancer|joue|demarre|démarre|affiche|montre|va|aller|navigue|amene|emmene|passe|accede|retourne|reviens|genere|génère|generer|générer|donne|fais)\b/.test(
     normalized,
   )
+}
+
+function isGeneralQuestion(raw, normalized) {
+  if (/^(resume|résume|resume-moi|résume-moi|fais-moi un (petit )?r[ée]sum[ée])/.test(normalized)) return true
+  const startsLikeQuestion =
+    /^(pourquoi|comment|qu['’]?est[- ]ce|que |quels?|quelles?|qui\b|quand\b|où\b|ou\b|explique|raconte|résume|resume|donne[- ]moi (des |une )?idées?|peux[- ]tu (m['’]expliquer|me (dire|raconter))|what|why|how)\b/i.test(
+      raw,
+    ) || /resume|résume|resumer|résumer/.test(normalized)
+  const questionMark = /\?\s*$/.test(raw)
+  if (!startsLikeQuestion && !questionMark) return false
+  if (/(ouvre|lance|joue|cherche|recherche|trouve|retrouve|crée|cree|ajoute|supprime|marque|épingle|epingle|active|désactive|desactive|coupe|change|mets|passe|va|navigue|ferme|exporte|visite|mode)\b/.test(normalized)) {
+    return false
+  }
+  if (/(mes notes|\bnotes?\b|\bmots?\b|\bécrit|\becrit|\btaches?\b|\btâches?\b|\btodo\b|\brecords?\b|\bniveaux?\b|\bxp\b|progression|\bcombien\b|quelle heure|quelle date|mes favoris|mon agenda|meteo|météo|quel temps|dashboard|arcade|outils|calculatrice|minuteur|chronometre|compte a rebours|fuseau|calendrier)/.test(normalized)) {
+    return false
+  }
+  return true
 }
 
 function extractSearchQuery(raw) {
@@ -805,7 +823,7 @@ function interpretSingle(input, { data, prefs }) {
     return createResult(`Votre record à ${recordGame.title} : ${detail}.`)
   }
 
-  if (/(combien de notes|nombre de notes|niveau|xp|progression|statistiques|combien de taches|combien de tâches|combien de parties|mes records|mes favoris|ou en suis je|où en suis-je)/.test(n) && !openVerb) {
+  if (/(combien de notes|nombre de notes|niveau|\bxp\b|progression|statistiques|combien de taches|combien de tâches|combien de parties|mes records|mes favoris|ou en suis je|où en suis-je)/.test(n) && !openVerb) {
     if (/(combien de notes|nombre de notes)/.test(n)) {
       return createResult(`Vous avez ${data.notes.length} ${plural(data.notes.length, 'note')} enregistrée${data.notes.length > 1 ? 's' : ''}.`)
     }
@@ -827,6 +845,16 @@ function interpretSingle(input, { data, prefs }) {
     return createResult('J’ouvre votre météo et son état actuel.', {
       actions: [{ type: 'openWidget', id: 'weather', page: 'home', title: 'Météo', subtitle: 'Conditions réelles', label: 'J’ouvre votre météo' }],
     })
+  }
+
+  if (isGeneralQuestion(raw, n)) {
+    return createResult(
+      'Je peux répondre à cette question si une IA conversationnelle est connectée. Ouvre les paramètres pour ajouter un fournisseur compatible (OpenRouter, OpenAI, Groq, Gemini ou Ollama).',
+      {
+        kind: 'general',
+        suggestions: ['Ouvre les paramètres', 'Cherche dans mes notes', 'Ouvre ma calculatrice'],
+      },
+    )
   }
 
   const tool = findTool(raw)
@@ -877,6 +905,7 @@ function interpretSingle(input, { data, prefs }) {
   return createResult(
     `Je n’ai pas trouvé « ${raw.slice(0, 60)} » dans votre espace. Je peux chercher un mot dans vos notes, ouvrir une page, lancer un jeu, créer une note ou changer vos préférences.`,
     {
+      kind: 'fallback',
       suggestions: ['Trouve le mot vacances dans mes notes', 'Ouvre mes notes', 'Lance Memory', 'Fais-moi visiter NEXUS'],
     },
   )
@@ -899,6 +928,7 @@ export function interpret(input, context) {
   if (segments.length > 1) {
     const results = segments.map((segment) => interpretSingle(segment, context))
     const notes = results.flatMap((entry) => entry.notes ?? []).slice(0, 5)
+    const cloudish = results.every((entry) => entry.kind === 'general' || entry.kind === 'fallback')
     return createResult(
       results.map((entry) => entry.reply).filter(Boolean).join(' '),
       {
@@ -907,6 +937,7 @@ export function interpret(input, context) {
         suggestions: results.at(-1)?.suggestions ?? defaultSuggestions(),
         closeAssistant: results.some((entry) => entry.closeAssistant),
         multi: true,
+        kind: cloudish ? 'general' : 'local',
       },
     )
   }

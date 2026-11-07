@@ -3,8 +3,11 @@ import {
   Check,
   Database,
   Download,
+  Eye,
+  EyeOff,
   HardDrive,
   Keyboard,
+  Loader2,
   MonitorSmartphone,
   Palette,
   Settings2,
@@ -21,13 +24,24 @@ import { usePrefs } from '../state/PrefsContext'
 import { useNavigation } from '../state/NavigationContext'
 import { useToast } from '../components/Toast'
 import { useOnline } from '../lib/hooks'
-import { ConfirmDialog, PageHeader, Switch } from '../components/ui'
+import { ConfirmDialog, Field, PageHeader, Switch } from '../components/ui'
 import { ACCENTS, THEMES } from '../lib/themes'
 import { downloadText, humanBytes, storageBytes } from '../lib/utils'
 import { speakAssistant, speechAvailable, stopSpeech } from '../lib/speech'
+import {
+  AI_PRESETS,
+  DEFAULT_CLOUD_CONFIG,
+  applyPreset,
+  clearCloudConfig,
+  cloudLabel,
+  isCloudConfigured,
+  loadCloudConfig,
+  saveCloudConfig,
+  testCloudConnection,
+} from '../lib/cloudAI'
 import { playSound } from '../lib/sound'
 
-const APP_VERSION = '1.2.0'
+const APP_VERSION = '1.3.0'
 
 const SHORTCUTS = [
   ['⌘ / Ctrl + K', 'Ouvrir la recherche globale'],
@@ -47,7 +61,43 @@ export default function SettingsPage({ onCustomize, installPrompt, onInstall, st
   const [confirm, setConfirm] = useState(null)
   const [pendingImport, setPendingImport] = useState(null)
   const [importError, setImportError] = useState('')
+  const [cloud, setCloud] = useState(loadCloudConfig)
+  const [showKey, setShowKey] = useState(false)
+  const [cloudTest, setCloudTest] = useState({ state: 'idle', message: '' })
   const fileRef = useRef(null)
+
+  const updateCloud = (patch) => {
+    const next = { ...cloud, ...patch }
+    setCloud(next)
+    saveCloudConfig(next)
+    setCloudTest({ state: 'idle', message: '' })
+  }
+
+  const changeProvider = (preset) => {
+    const next = applyPreset(cloud, preset)
+    setCloud(next)
+    saveCloudConfig(next)
+    setCloudTest({ state: 'idle', message: '' })
+  }
+
+  const runCloudTest = async () => {
+    if (!isCloudConfigured(cloud)) {
+      setCloudTest({ state: 'error', message: 'Renseignez l’URL, le modèle et la clé si nécessaire.' })
+      return
+    }
+    setCloudTest({ state: 'loading', message: 'Test de connexion…' })
+    try {
+      const answer = await testCloudConnection(cloud)
+      setCloudTest({
+        state: 'success',
+        message: `Connexion réussie avec ${cloudLabel(cloud)} · « ${answer.slice(0, 80)} »`,
+      })
+      playSound('success')
+    } catch (error) {
+      setCloudTest({ state: 'error', message: error.message })
+      playSound('error')
+    }
+  }
 
   const dataBytes = storageBytes(data)
   const prefBytes = storageBytes(prefs)
@@ -397,6 +447,128 @@ export default function SettingsPage({ onCustomize, installPrompt, onInstall, st
           </div>
         </section>
 
+        <section className="settings-card glass settings-card-wide">
+          <div className="settings-head">
+            <span className="settings-icon"><Sparkles size={18} /></span>
+            <div>
+              <h2>Intelligence conversationnelle</h2>
+              <p>Une vraie IA pour les questions générales, en complément des actions locales de NEXUS.</p>
+            </div>
+            {isCloudConfigured(cloud) ? (
+              <span className="ai-status-pill is-online"><Check size={12} /> Connectée</span>
+            ) : (
+              <span className="ai-status-pill">Mode local</span>
+            )}
+          </div>
+
+          <p className="hint">
+            NEXUS Mind exécute vos actions sans Internet. Pour répondre aux questions générales, connectez un fournisseur
+            compatible OpenAI. Seuls la date, la page, les compteurs et les titres récents sont transmis — jamais le contenu
+            de vos notes. La clé reste dans ce navigateur et n’est pas incluse dans l’export.
+          </p>
+
+          <div className="ai-settings-grid">
+            <Field label="Fournisseur" hint={AI_PRESETS.find((preset) => preset.id === cloud.preset)?.description}>
+              <select value={cloud.preset} onChange={(event) => changeProvider(event.target.value)}>
+                {AI_PRESETS.map((preset) => (
+                  <option key={preset.id} value={preset.id}>{preset.label}</option>
+                ))}
+              </select>
+            </Field>
+
+            {cloud.preset !== 'off' ? (
+              <>
+                <Field label="Modèle" hint="Le nom exact attendu par votre fournisseur.">
+                  <input
+                    type="text"
+                    value={cloud.model}
+                    onChange={(event) => updateCloud({ model: event.target.value })}
+                    placeholder="ex. openai/gpt-4o-mini"
+                    spellCheck={false}
+                  />
+                </Field>
+                <Field label="URL de l’API" hint="Le connecteur ajoute /chat/completions.">
+                  <input
+                    type="url"
+                    value={cloud.baseUrl}
+                    onChange={(event) => updateCloud({ baseUrl: event.target.value })}
+                    placeholder="https://…/v1"
+                    spellCheck={false}
+                  />
+                </Field>
+                <Field
+                  label="Clé API"
+                  hint={
+                    cloud.preset === 'ollama'
+                      ? 'Aucune clé nécessaire pour Ollama en local.'
+                      : 'Stockée uniquement ici, jamais synchronisée ni exportée.'
+                  }
+                >
+                  <div className="ai-key-row">
+                    <input
+                      type={showKey ? 'text' : 'password'}
+                      value={cloud.apiKey}
+                      onChange={(event) => updateCloud({ apiKey: event.target.value })}
+                      placeholder={AI_PRESETS.find((preset) => preset.id === cloud.preset)?.keyHint || 'clé API'}
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                    <button
+                      type="button"
+                      className="ai-key-toggle"
+                      onClick={() => setShowKey((value) => !value)}
+                      aria-label={showKey ? 'Masquer la clé' : 'Afficher la clé'}
+                      title={showKey ? 'Masquer la clé' : 'Afficher la clé'}
+                    >
+                      {showKey ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                    {cloud.apiKey ? (
+                      <button
+                        type="button"
+                        className="ai-key-clear"
+                        onClick={() => updateCloud({ apiKey: '' })}
+                        title="Effacer la clé"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    ) : null}
+                  </div>
+                </Field>
+              </>
+            ) : null}
+          </div>
+
+          {cloud.preset !== 'off' ? (
+            <div className="ai-test-row">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={runCloudTest}
+                disabled={cloudTest.state === 'loading'}
+              >
+                {cloudTest.state === 'loading' ? <Loader2 size={15} className="spin" /> : <Wifi size={15} />}
+                {cloudTest.state === 'loading' ? 'Test en cours…' : 'Tester la connexion'}
+              </button>
+              {cloudTest.message ? (
+                <span className={`ai-test-status is-${cloudTest.state}`}>{cloudTest.message}</span>
+              ) : (
+                <span className="ai-test-status">Le test n’envoie aucune donnée NEXUS.</span>
+              )}
+            </div>
+          ) : (
+            <p className="hint">
+              Sans fournisseur, NEXUS Mind reste limité aux actions locales et à la recherche dans vos notes. Choisissez un
+              fournisseur ci-dessus pour activer les réponses générales.
+            </p>
+          )}
+
+          <p className="hint ai-cors-note">
+            Si le test échoue avec « Connexion au fournisseur impossible », vérifiez l’URL, la clé et l’autorisation CORS du
+            fournisseur. OpenRouter, Groq et Gemini sont généralement utilisables depuis un navigateur ; un proxy peut être
+            nécessaire pour d’autres services.
+          </p>
+        </section>
+
         <section className="settings-card glass">
           <div className="settings-head">
             <span className="settings-icon"><MonitorSmartphone size={18} /></span>
@@ -436,10 +608,10 @@ export default function SettingsPage({ onCustomize, installPrompt, onInstall, st
             )}
           </div>
           <ul className="about-list">
-            <li><Wifi size={14} /><span>Fonctionne hors ligne après le premier chargement. Seule la météo nécessite Internet.</span></li>
-            <li><ShieldCheck size={14} /><span>Aucune donnée n’est envoyée à un serveur NEXUS. Tout reste sur cet appareil.</span></li>
-            <li><Database size={14} /><span>Contenu structuré : IndexedDB · préférences : localStorage.</span></li>
-            <li><Sparkles size={14} /><span>NEXUS Mind fonctionne localement, sans clé API et sans envoyer vos notes.</span></li>
+            <li><Wifi size={14} /><span>Fonctionne hors ligne après le premier chargement. Seule la météo et l’IA distante nécessitent Internet.</span></li>
+            <li><ShieldCheck size={14} /><span>Aucune donnée n’est envoyée à un serveur NEXUS. Tout reste sur cet appareil, sauf les questions envoyées au fournisseur IA si vous en connectez un.</span></li>
+            <li><Database size={14} /><span>Contenu structuré : IndexedDB · préférences : localStorage · clé IA : stockage séparé.</span></li>
+            <li><Sparkles size={14} /><span>NEXUS Mind agit localement. La couche conversationnelle optionnelle ajoute les réponses générales sans donner accès à l’interface.</span></li>
           </ul>
           <div className="about-footer">
             <span>NEXUS — Personal Hub · version {APP_VERSION}</span>
@@ -454,11 +626,14 @@ export default function SettingsPage({ onCustomize, installPrompt, onInstall, st
         onConfirm={async () => {
           await resetContent()
           resetPrefs()
-          toast({ title: 'NEXUS réinitialisé', description: 'Toutes les données locales ont été effacées.', tone: 'success' })
+          clearCloudConfig()
+          setCloud({ ...DEFAULT_CLOUD_CONFIG })
+          setCloudTest({ state: 'idle', message: '' })
+          toast({ title: 'NEXUS réinitialisé', description: 'Toutes les données locales et la clé IA ont été effacées.', tone: 'success' })
           navigate('home')
         }}
         title="Effacer toutes les données ?"
-        description="Notes, tâches, favoris, réglages et statistiques seront définitivement supprimés de cet appareil. Cette action est irréversible."
+        description="Notes, tâches, favoris, réglages, statistiques et clé IA seront définitivement supprimés de cet appareil. Cette action est irréversible."
         confirmLabel="Tout effacer"
       />
 

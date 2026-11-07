@@ -472,12 +472,111 @@
   flex-wrap: wrap;
 }
 
+/* ---------------- conversational AI ---------------- */
+
+.settings-grid > .settings-card-wide {
+  grid-column: 1 / -1;
+}
+
+.ai-status-pill {
+  margin-left: auto;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted-fg);
+  font-size: 0.61rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ai-status-pill.is-online {
+  color: var(--success);
+  border-color: rgba(94, 234, 212, 0.24);
+  background: rgba(94, 234, 212, 0.08);
+}
+
+.ai-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 14px;
+}
+
+.ai-key-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-key-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-key-toggle,
+.ai-key-clear {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted-fg);
+  transition: color 0.16s, border-color 0.16s, background 0.16s;
+}
+
+.ai-key-toggle:hover,
+.ai-key-clear:hover {
+  color: var(--foreground);
+  border-color: rgba(var(--accent-rgb), 0.35);
+  background: rgba(var(--accent-rgb), 0.08);
+}
+
+.ai-key-clear:hover {
+  color: var(--danger);
+  border-color: rgba(251, 113, 133, 0.4);
+}
+
+.ai-test-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ai-test-status {
+  font-size: 0.68rem;
+  color: var(--faint-fg);
+  line-height: 1.45;
+}
+
+.ai-test-status.is-success {
+  color: var(--success);
+}
+
+.ai-test-status.is-error {
+  color: var(--danger);
+}
+
+.ai-cors-note {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
 @media (max-width: 1000px) {
   .settings-grid {
     grid-template-columns: 1fr;
   }
 
-  .settings-grid > .settings-card:last-child {
+  .settings-grid > .settings-card:last-child,
+  .settings-grid > .settings-card-wide {
     grid-column: 1;
   }
 
@@ -502,5 +601,9 @@
 
   .settings-button-row .btn {
     flex: 1;
+  }
+
+  .ai-settings-grid {
+    grid-template-columns: 1fr;
   }
 }

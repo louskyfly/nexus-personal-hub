@@ -532,6 +532,43 @@ html[data-theme='frost'] .ai-suggestions button {
   flex: 0 0 auto;
 }
 
+.ai-foot-right {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.ai-connect {
+  font-size: 0.57rem;
+  font-weight: 600;
+  color: var(--ai-green);
+  padding: 0;
+  background: none;
+  white-space: nowrap;
+}
+
+.ai-connect:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.ai-cloud-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  max-width: 120px;
+  padding: 2px 6px;
+  border-radius: 99px;
+  border: 1px solid rgba(var(--ai-green-rgb), 0.16);
+  background: rgba(var(--ai-green-rgb), 0.07);
+  color: var(--ai-green);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .ai-foot span {
   display: inline-flex;
   align-items: center;

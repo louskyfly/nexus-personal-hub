@@ -21,6 +21,14 @@ import { usePrefs } from '../state/PrefsContext'
 import { useNavigation } from '../state/NavigationContext'
 import { useToast } from './Toast'
 import { ASSISTANT_PAGES, defaultSuggestions, interpret } from '../lib/assistant'
+import {
+  askCloudAI,
+  buildCloudMessages,
+  buildSystemPrompt,
+  cloudLabel,
+  isCloudConfigured,
+  loadCloudConfig,
+} from '../lib/cloudAI'
 import { speakAssistant, speechAvailable, stopSpeech } from '../lib/speech'
 import { downloadText, timeAgo } from '../lib/utils'
 import { playSound } from '../lib/sound'
@@ -87,13 +95,13 @@ function TypedText({ text, animate = true, speed = 15 }) {
 export function NexusAssistant({ open, onOpenChange }) {
   const { data, addNote, addTask, addBookmark, toggleTask, deleteTask, updateNote } = useData()
   const { prefs, setPref, toggleFavorite } = usePrefs()
-  const { navigate, openGame, openTool, openCustomize, openSearch, closeOverlays } = useNavigation()
+  const { route, navigate, openGame, openTool, openCustomize, openSearch, closeOverlays } = useNavigation()
   const { toast } = useToast()
   const [messages, setMessages] = useState(() => [
     {
       id: nextMessageId(),
       role: 'assistant',
-      text: `Je suis NEXUS Mind, votre assistant local${prefs.name ? ` de ${prefs.name}` : ''}. Je cherche dans vos notes, j’ouvre pages, jeux et outils, et j’agis sur vos préférences. Que fait-on ?`,
+      text: `Je suis NEXUS Mind, votre assistant${prefs.name ? ` de ${prefs.name}` : ''}. Je cherche dans vos notes, j’ouvre pages, jeux et outils, et j’agis sur vos préférences. Que fait-on ?`,
       welcome: true,
     },
   ])
@@ -103,6 +111,7 @@ export function NexusAssistant({ open, onOpenChange }) {
   const [running, setRunning] = useState(false)
   const [activity, setActivity] = useState(null)
   const [portal, setPortal] = useState(null)
+  const [cloudConfig, setCloudConfig] = useState(loadCloudConfig)
   const runningRef = useRef(false)
   const messagesRef = useRef(null)
   const inputRef = useRef(null)
@@ -110,6 +119,7 @@ export function NexusAssistant({ open, onOpenChange }) {
   const mountedRef = useRef(true)
 
   const voiceActive = Boolean(prefs.aiVoice && prefs.sound)
+  const cloudConnected = isCloudConfigured(cloudConfig)
 
   useEffect(() => {
     mountedRef.current = true
@@ -125,9 +135,16 @@ export function NexusAssistant({ open, onOpenChange }) {
       stopSpeech()
       return
     }
+    setCloudConfig(loadCloudConfig())
     const timer = setTimeout(() => inputRef.current?.focus(), 220)
     return () => clearTimeout(timer)
   }, [open])
+
+  useEffect(() => {
+    const onConfig = () => setCloudConfig(loadCloudConfig())
+    window.addEventListener('nexus:ai-config-changed', onConfig)
+    return () => window.removeEventListener('nexus:ai-config-changed', onConfig)
+  }, [])
 
   useEffect(() => {
     if (!open) return undefined
@@ -374,14 +391,62 @@ export function NexusAssistant({ open, onOpenChange }) {
         actions: [],
         notes: [],
         suggestions: defaultSuggestions(),
+        kind: 'fallback',
       }
     }
 
-    const reply = result.reply || 'Je suis là.'
-    pushAssistantMessage(reply, { notes: result.notes ?? [] })
-    setSuggestions(result.suggestions?.length ? result.suggestions : defaultSuggestions())
+    const config = loadCloudConfig()
+    const cloudReady = isCloudConfigured(config)
+    const openQuestion = result.kind === 'general' || result.kind === 'fallback'
+    let reply = result.reply || 'Je suis là.'
+    let cloudFailed = false
+    let cloudUsed = false
 
-    const actions = result.actions ?? []
+    if (openQuestion && cloudReady) {
+      cloudUsed = true
+      startActivity(`Je consulte ${cloudLabel(config)}…`, 0, 0, 'thinking')
+      try {
+        const noteTitles = [...data.notes]
+          .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
+          .slice(0, 6)
+          .map((note) => note.title || 'Note sans titre')
+        const taskTitles = data.tasks
+          .filter((task) => !task.done)
+          .slice(0, 6)
+          .map((task) => task.title)
+        const systemPrompt = buildSystemPrompt({
+          prefs,
+          data,
+          route,
+          noteTitles,
+          taskTitles,
+        })
+        const cloudMessages = buildCloudMessages({
+          history: messages,
+          userText: text,
+          systemPrompt,
+        })
+        reply = await askCloudAI({ config, messages: cloudMessages })
+      } catch (error) {
+        cloudFailed = true
+        reply = `Je n’ai pas pu obtenir de réponse de ${cloudLabel(config)}. ${error.message}\n\nVérifie la configuration dans Paramètres → Intelligence conversationnelle.`
+      }
+    } else if (openQuestion && !cloudReady) {
+      if (result.kind === 'fallback') {
+        reply = `${result.reply}\n\nPour les questions générales, connecte une IA dans Paramètres → Intelligence conversationnelle.`
+      }
+    }
+
+    pushAssistantMessage(reply, { notes: openQuestion ? [] : result.notes ?? [] })
+    setSuggestions(
+      cloudFailed
+        ? ['Ouvre les paramètres', 'Cherche dans mes notes', 'Ouvre ma calculatrice']
+        : result.suggestions?.length
+          ? result.suggestions
+          : defaultSuggestions(),
+    )
+
+    const actions = openQuestion ? [] : result.actions ?? []
     const hidesChat = actions.some((action) =>
       ['navigate', 'openNote', 'createNote', 'openGame', 'openTool', 'openWidget', 'openCustomize', 'openSearch'].includes(
         action.type,
@@ -402,7 +467,7 @@ export function NexusAssistant({ open, onOpenChange }) {
     const shouldSpeak = prefs.aiVoice && prefs.sound && !mutedByAction && speechAvailable()
     if (shouldSpeak) speakAssistant(reply, { enabled: true })
 
-    finishActivity(reply, actions.length ? 'done' : 'answer')
+    finishActivity(reply, cloudFailed ? 'error' : actions.length || cloudUsed ? 'done' : 'answer')
     if (result.closeAssistant) onOpenChange(false)
     runningRef.current = false
     if (mountedRef.current) setRunning(false)
@@ -520,7 +585,7 @@ export function NexusAssistant({ open, onOpenChange }) {
               </span>
               <div>
                 <strong>NEXUS Mind</strong>
-                <span>{running ? 'agit sur votre espace…' : 'assistant local · hors ligne'}</span>
+                <span>{running ? 'agit sur votre espace…' : cloudConnected ? `IA connectée · ${cloudLabel(cloudConfig)}` : 'assistant local · hors ligne'}</span>
               </div>
             </div>
             <div className="ai-head-buttons">
@@ -622,7 +687,25 @@ export function NexusAssistant({ open, onOpenChange }) {
           </form>
           <footer className="ai-foot">
             <span><Sparkles size={11} /> Actions réelles · données locales</span>
-            <span>{voiceActive ? 'voix active' : 'mode texte'} · Ctrl J</span>
+            <div className="ai-foot-right">
+              {cloudConnected ? (
+                <span className="ai-cloud-badge">
+                  <Sparkles size={10} /> {cloudLabel(cloudConfig)}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  className="ai-connect"
+                  onClick={() => {
+                    onOpenChange(false)
+                    navigate('settings')
+                  }}
+                >
+                  Connecter une IA
+                </button>
+              )}
+              <span>{voiceActive ? 'voix active' : 'mode texte'} · Ctrl J</span>
+            </div>
           </footer>
         </aside>
       ) : null}
