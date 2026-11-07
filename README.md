@@ -4,6 +4,9 @@ Un espace numérique personnel inspiré de l’écosystème Apple et du langage 
 NEXUS réunit un tableau de bord, une salle d’arcade, des outils du quotidien et un espace de notes
 dans une seule application locale, rapide et installable.
 
+**En ligne : [https://louskyfly.github.io/nexus-personal-hub/](https://louskyfly.github.io/nexus-personal-hub/)**
+· **Dépôt : [github.com/louskyfly/nexus-personal-hub](https://github.com/louskyfly/nexus-personal-hub)**
+
 ![Aperçu de NEXUS](docs/preview-home.png)
 
 ## Démarrer
@@ -23,6 +26,12 @@ npm run preview
 ```
 
 Le build génère également le manifeste PWA, le service worker et les ressources hors ligne.
+
+### Déploiement GitHub Pages
+
+Le dépôt contient le workflow `.github/workflows/deploy.yml`. Chaque push sur `main` construit
+l’application et la publie sur GitHub Pages. Le `base` Vite est calculé automatiquement à partir
+du nom du dépôt lorsque le build tourne dans GitHub Actions.
 
 ## Fonctionnalités
 
